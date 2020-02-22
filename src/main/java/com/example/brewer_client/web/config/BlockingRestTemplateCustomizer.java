@@ -5,6 +5,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateCustomizer;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
@@ -13,15 +14,31 @@ import org.springframework.web.client.RestTemplate;
 
 @Component
 public class BlockingRestTemplateCustomizer implements RestTemplateCustomizer {
+
+    private final Integer maxTotalConnections;
+    private final Integer defaultMaxTotalCOnnections;
+    private final Integer connectionRequestTimeout;
+    private final Integer socketTimeout;
+
+    public BlockingRestTemplateCustomizer(@Value("${micro.maxTotalConnections}") Integer maxTotalConnections,
+                                          @Value("${micro.defaultMaxTotalCOnnections}") Integer defaultMaxTotalCOnnections,
+                                          @Value("${micro.connectionRequestTimeout}") Integer connectionRequestTimeout,
+                                          @Value("${micro.socketTimeout}") Integer socketTimeout) {
+        this.maxTotalConnections = maxTotalConnections;
+        this.defaultMaxTotalCOnnections = defaultMaxTotalCOnnections;
+        this.connectionRequestTimeout = connectionRequestTimeout;
+        this.socketTimeout = socketTimeout;
+    }
+
     public ClientHttpRequestFactory clientHttpRequestFactory() {
         PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
-        connectionManager.setMaxTotal(100);
-        connectionManager.setDefaultMaxPerRoute(20);
+        connectionManager.setMaxTotal(maxTotalConnections);
+        connectionManager.setDefaultMaxPerRoute(defaultMaxTotalCOnnections);
 
         RequestConfig requestConfig = RequestConfig
                 .custom()
-                .setConnectionRequestTimeout(3000)
-                .setSocketTimeout(3000)
+                .setConnectionRequestTimeout(connectionRequestTimeout)
+                .setSocketTimeout(socketTimeout)
                 .build();
 
         CloseableHttpClient httpClient = HttpClients.custom()
